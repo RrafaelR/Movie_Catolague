@@ -90,6 +90,47 @@ const EditMovie = () => {
                 })
         } else {
             // editing an existing movie
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+            headers.append("Authorization", "Bearer " + jwtToken);
+
+            const requestOptions = {
+                method: "GET",
+                headers: headers,
+            }
+            fetch(`/admin/movies/${id}`, requestOptions)
+                .then((response) => {
+                    if (response.status !== 200){
+                        setError("The response received was invalid, code: " + response.status);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log(data)
+                    //fix release date
+                    data.movie.release_date = new Date(data.movie.release_date).toISOString().split("T")[0];
+
+                    const checks = [];
+                    data.movie.genres.forEach(g => {
+                        if(data.movie.genres_array.indexOf(g.id) !== -1){
+                            checks.push({id: g.id, checked: true, genre: g.genre});
+                        }else{
+                            checks.push({id: g.id, checked: false, genre: g.genre});
+                        }
+                    })
+
+                    //set State
+                    setMovie({
+                        ...data.movie,
+                        genre: checks,
+                    })
+
+                })
+                .catch((err) => {
+                    console.log(err)
+                })
+
+
         }
 
     }, [id, jwtToken, navigate])
@@ -178,10 +219,6 @@ const EditMovie = () => {
     }
 
     const handleCheck = (event, position) => {
-        console.log("handleCheck called");
-        console.log("value in handleCheck:", event.target.value);
-        console.log("checked is", event.target.checked);
-        console.log("position is", position);
 
         let tmpArr = movie.genres;
         tmpArr[position].checked = !tmpArr[position].checked;
