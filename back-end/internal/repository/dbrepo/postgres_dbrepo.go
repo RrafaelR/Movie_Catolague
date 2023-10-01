@@ -204,7 +204,6 @@ func (m *PostgresDBRepo) OneMovieForEdit(id int) (*models.Movie, []*models.Genre
 		allGenres = append(allGenres, &g)
 	}
 
-
 	return &movie, allGenres, err
 }
 
@@ -322,6 +321,28 @@ func (m *PostgresDBRepo) InsertMovie(movie models.Movie) (int, error) {
 	return newID, nil
 }
 
+func (m *PostgresDBRepo) UpdateMovie(movie models.Movie) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	query := `update movies set title=$1, description=$2, release_date=$3, runtime=$4, mpaa_rating=$5, updated_at=$6, image=$7 where id=$8`
+	_, err := m.DB.ExecContext(ctx, query,
+		movie.Title,
+		movie.Description,
+		movie.ReleaseDate,
+		movie.RunTime,
+		movie.MPAARating,
+		movie.UpdatedAt,
+		movie.Image,
+		movie.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *PostgresDBRepo) UpdateMovieGenres(id int, genreIDs []int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -339,6 +360,19 @@ func (m *PostgresDBRepo) UpdateMovieGenres(id int, genreIDs []int) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *PostgresDBRepo) DeleteMovieByID(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	query := `delete from movies where id=$1`
+	_, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
 	}
 
 	return nil
